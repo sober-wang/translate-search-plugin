@@ -34,4 +34,4 @@ killall dde-grand-search-daemon
 
 ## License
 
-translate-search-plugin for dde-grand-search is licensed under [ GPL-3.0-only](LICENSE.txt)
+translate-search-plugin for dde-grand-search is licensed under [GPL-3.0-only](LICENSE)
