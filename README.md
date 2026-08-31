@@ -5,12 +5,13 @@
 依赖：
 Golang version: 1.26.4
 
-安装方式
+构建方式
 
 ```shell
-cd build 
-chmod +x install.sh 
-killall dde-grand-search-daemon
+make build 
+make deb 
+sudo dpkg -i translate-search-plugin.deb
+
 ```
 
 
