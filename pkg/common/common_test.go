@@ -7,6 +7,6 @@ func TestReadConfig(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	t.Logf("\nserverName: %s\naddress: %s\ninterface: %s", cfg.ServerName, cfg.Address, cfg.Interface)
+	t.Logf("\nserverName: %s\naddress: %s\ninterface: %s", cfg.ServiceName, cfg.ObjectPath, cfg.Interface)
 
 }
