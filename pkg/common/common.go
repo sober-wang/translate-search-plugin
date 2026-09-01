@@ -5,11 +5,7 @@ Packge common
 package common
 
 import (
-	log "log/slog"
-
-	dbusapi "github.com/sober-wang/translate-search-plugin/pkg/dbus_api"
-
-	"gopkg.in/ini.v1"
+	"unicode"
 )
 
 // IsOnlyEnglishLetters 是否只包含英文单词
@@ -26,17 +22,24 @@ func IsOnlyEnglishLetters(str string) bool {
 	return true
 }
 
-// ReadConfig 获取配置文件信息
-func ReadConfig() (dbusapi.GrandSearchPlugin, error) {
-	var cfg dbusapi.GrandSearchPlugin
-	cfgPath := "/usr/lib/x86_64-linux-gnu/dde-grand-search-daemon/plugins/searcher/translate-search-plugin.conf"
-	log.Info("config path", "path", cfgPath)
-	f, err := ini.Load(cfgPath)
-	if err != nil {
-		return cfg, err
+// IncludeMathOperator 判断输入字符是否包含数学运算符，货币单位
+func IncludeMathOperator(str string) bool {
+	exclude := make(map[rune]bool)
+	exclude['*'] = true
+	exclude['('] = true
+	exclude[')'] = true
+	exclude['%'] = true
+
+	//slog.Info("includ math operator", "str", str)
+	for _, s := range str {
+		if exclude[s] {
+			return false
+		}
+		//slog.Info("for range ", "s", s)
+		if unicode.IsSymbol(s) {
+			return false
+		}
 	}
-	cfg.ServiceName = f.Section("Grand Search").Key("DBusService").String()
-	cfg.ObjectPath = f.Section("Grand Search").Key("DBusAddress").String()
-	cfg.Interface = f.Section("Grand Search").Key("DBusInterface").String()
-	return cfg, nil
+	return true
+
 }

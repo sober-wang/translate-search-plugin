@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/sober-wang/translate-search-plugin/pkg/common"
 	dbusapi "github.com/sober-wang/translate-search-plugin/pkg/dbus_api"
 )
 
@@ -28,12 +27,12 @@ func init() {
 }
 
 func main() {
-	cfg, err := common.ReadConfig()
+	cfg, err := dbusapi.NewDBus()
 	if err != nil {
 		log.Error("read config", "err", err)
 		return
 	}
 
-	cfg.SelfPid = os.Getegid()
 	dbusapi.DBusRun(cfg)
+
 }

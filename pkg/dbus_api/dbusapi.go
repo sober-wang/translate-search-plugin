@@ -6,10 +6,13 @@ package dbusapi
 import (
 	"encoding/json"
 	log "log/slog"
+	"os"
 	"syscall"
 
 	calltranslator "github.com/sober-wang/translate-search-plugin/pkg/call_translator"
+	"github.com/sober-wang/translate-search-plugin/pkg/common"
 	"github.com/sober-wang/translate-search-plugin/pkg/types"
+	"gopkg.in/ini.v1"
 
 	"github.com/godbus/dbus/v5"
 )
@@ -28,10 +31,27 @@ type GrandSearchPlugin struct {
 	SelfPid     int
 }
 
+// NewDBus 获取配置文件信息
+func NewDBus() (GrandSearchPlugin, error) {
+	var cfg GrandSearchPlugin
+	cfgPath := "/usr/lib/x86_64-linux-gnu/dde-grand-search-daemon/plugins/searcher/translate-search-plugin.conf"
+	log.Info("config path", "path", cfgPath)
+	f, err := ini.Load(cfgPath)
+	if err != nil {
+		return cfg, err
+	}
+	cfg.ServiceName = f.Section("Grand Search").Key("DBusService").String()
+	cfg.ObjectPath = f.Section("Grand Search").Key("DBusAddress").String()
+	cfg.Interface = f.Section("Grand Search").Key("DBusInterface").String()
+	cfg.SelfPid = os.Getegid()
+	return cfg, nil
+}
+
 // Search 方法接收搜索请求
 func (gsp *GrandSearchPlugin) Search(jsonData string) (string, *dbus.Error) {
 	log.Info("收到搜索请求", "data", jsonData)
 
+	var results string
 	// 1. 解析输入 JSON (包含 "ver", "mID", "cont" 等字段)[reference:10]
 	var rb types.ReqBody
 	//var request map[string]interface{}
@@ -42,8 +62,13 @@ func (gsp *GrandSearchPlugin) Search(jsonData string) (string, *dbus.Error) {
 	var rpb types.RespBody
 	rpb.MID = rb.MID
 	rpb.Ver = rb.Ver
+	if !common.IncludeMathOperator(rb.Count) {
+		results = rpb.BuildEmptyResp()
+		log.Error("Translate rune include math operator or Monetary unit", "str", rb.Count)
+		return results, nil
+
+	}
 	res, bingerr := calltranslator.QueryBingDict(rb.Count)
-	var results string
 	if bingerr != nil {
 		str, err := calltranslator.CallCliTransToChinese(rb.Count)
 		if err != nil {
