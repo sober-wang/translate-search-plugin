@@ -24,11 +24,12 @@ func IsOnlyEnglishLetters(str string) bool {
 
 // IncludeMathOperator 判断输入字符是否包含数学运算符，货币单位
 func IncludeMathOperator(str string) bool {
-	exclude := make(map[rune]bool)
-	exclude['*'] = true
-	exclude['('] = true
-	exclude[')'] = true
-	exclude['%'] = true
+	exclude := map[rune]bool{
+		'*': true,
+		'(': true,
+		')': true,
+		'%': true,
+	}
 
 	//slog.Info("includ math operator", "str", str)
 	for _, s := range str {
