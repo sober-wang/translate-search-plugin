@@ -4,6 +4,7 @@ Package dbusapi D-Bus 库调用，定义API接口方法。
 package dbusapi
 
 import (
+	"context"
 	"encoding/json"
 	log "log/slog"
 	"os"
@@ -12,6 +13,7 @@ import (
 	calltranslator "github.com/sober-wang/translate-search-plugin/pkg/call_translator"
 	"github.com/sober-wang/translate-search-plugin/pkg/common"
 	"github.com/sober-wang/translate-search-plugin/pkg/types"
+	"golang.design/x/clipboard"
 	"gopkg.in/ini.v1"
 
 	"github.com/godbus/dbus/v5"
@@ -29,6 +31,7 @@ type GrandSearchPlugin struct {
 	ObjectPath  string
 	Interface   string
 	SelfPid     int
+	Result      string
 }
 
 // NewDBus 获取配置文件信息
@@ -77,12 +80,15 @@ func (gsp *GrandSearchPlugin) Search(jsonData string) (string, *dbus.Error) {
 			return results, nil
 		}
 		results = rpb.BuildResp(str) // 这是你需要实现的搜索函数
+		gsp.Result = str
 		log.Info("答复请求", "data", results)
 		return results, nil
 	}
 
 	// 2. 执行你的搜索逻辑...
 	results = rpb.BuildResp(res) // 这是你需要实现的搜索函数
+	// 将数据临时缓存在内存中，用于 Action 调用将数据放置在剪贴板中
+	gsp.Result = res
 
 	// 3. 将结果序列化为 JSON 字符串并返回
 	log.Info("答复请求", "data", results)
@@ -101,7 +107,30 @@ func (gsp *GrandSearchPlugin) Stop(jsonData string) (bool, *dbus.Error) {
 // Action 方法处理用户点击结果的操作
 func (gsp *GrandSearchPlugin) Action(jsonData string) (bool, *dbus.Error) {
 	log.Info("收到操作请求", "data", jsonData)
-	// 实现打开文件/应用等的逻辑...
+	// 1. 初始化：检查剪贴板是否可用
+	err := clipboard.Init()
+	if err != nil {
+		// 在无图形界面的服务器上可能会失败
+		log.Error("剪贴板初始化失败", "err", err)
+		return false, buildDBusErrorMsg(err)
+	}
+
+	// 2. 写入文本 (UTF-8编码)
+	// 返回的 channel 可用于监听数据是否被其他程序覆盖
+	ctx := context.Background()
+	changed, err := clipboard.Write(ctx, clipboard.FmtText, []byte(gsp.Result))
+	if err != nil {
+		log.Error("写入剪贴板失败", "err", err)
+		return false, buildDBusErrorMsg(err)
+	}
+
+	// 可选：监听剪贴板变化
+	go func() {
+		<-changed
+		log.Info("写入的数据已被其他内容覆盖")
+	}()
+
+	log.Info("文本已成功复制到剪贴板！")
 	return true, nil
 }
 
