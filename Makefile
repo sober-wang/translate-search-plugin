@@ -9,6 +9,8 @@ DIR_HEAD := $(shell dirname $(FIRST_DIR) | xargs basename)
 BUILD_DIR := $(APP_NAME)/usr/lib/$(DIR_HEAD)/dde-grand-search-daemon/plugins/searcher
 DEB_DIR := $(APP_NAME)/DEBIAN
 BINARY := $(BUILD_DIR)/$(APP_NAME)
+TAG :=$(shell git branch --show-current)
+DEB_OUTPUT := translate-search-plugin_$(TAG).deb 
 
 .PHONY: install
 install:
@@ -26,13 +28,13 @@ build:
 .PHONY: clean
 clean:
 	rm -rf $(APP_NAME)
-	rm -rf $(APP_NAME).deb
+	rm -rf $(DEB_OUTPUT)
 
 
 .PHONY: deb
 deb: build
 	mkdir -p $(DEB_DIR)
 	cp config/deb-pkg/control $(DEB_DIR)
-	dpkg-deb --build translate-search-plugin translate-search-plugin.deb 
+	dpkg-deb --build translate-search-plugin $(DEB_OUTPUT)
 	
 	
